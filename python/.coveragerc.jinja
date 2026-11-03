@@ -1,0 +1,8 @@
+[run]
+source_pkgs = {{ package }}
+
+[report]
+# Every other exclusion is a `# pragma: no cover` that a reviewer sees.
+exclude_also = if TYPE_CHECKING:
+fail_under = 100
+show_missing = true

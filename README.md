@@ -4,16 +4,17 @@ A [Copier](https://copier.readthedocs.io/) template for every repo: the hooks, c
 
 ## Use it
 
+Create the repo on GitHub, let `uv init` write the project, then render the template into the clone:
+
 ```sh
-uvx copier copy gh:ozanozbeker/templates my-repo
+gh repo create ozanozbeker/my-repo --public --clone --add-readme --license mit --gitignore Python
+cd my-repo
+uv init --lib --python 3.14   # or --app
+uvx copier copy gh:ozanozbeker/templates .
 ```
 
 Copier asks the questions in `copier.yml` and writes the files that the answers call for.
-Then, in the new repo:
-
-```sh
-uv sync && uv run prek install && uv run prek run --all-files
-```
+It writes none of the files GitHub or `uv init` wrote, and when it finishes it prints what to add to `.gitignore` and `pyproject.toml` and the `uv add` line for the tools.
 
 A repo made from the template keeps a `.copier-answers.yml`.
 When the template changes, `uvx copier update` in that repo re-applies the newest tag and merges the change onto the repo's own edits.
@@ -22,14 +23,14 @@ When the template changes, `uvx copier update` in that repo re-applies the newes
 
 | Question       | Decides                                                                                            |
 | -------------- | -------------------------------------------------------------------------------------------------- |
-| `repo`         | The GitHub and PyPI name, the links in `pyproject.toml`, `SECURITY.md` and the badges              |
+| `repo`         | The GitHub and PyPI name, and the links in `pyproject.toml` and `SECURITY.md`                      |
 | `owner`        | The GitHub owner in every link                                                                     |
-| `language`     | The template directory: `python`, or `base` for a repo of prose and config                        |
-| `package`      | The import name under `src/`                                                                       |
-| `python_floor` | `.python-version`, `requires-python`, the classifiers and the CI matrix from the floor up          |
+| `language`     | The template directory: `python`, or `none` for a repo of prose and config                        |
+| `package`      | The import name under `src/`, for `.coveragerc` and the wheel check in `release.yml`               |
+| `python_floor` | The CI matrix from the floor up, and the classifiers the message prints                            |
 | `pypi`         | release-please, trusted publishing to PyPI, and the release-please config                          |
 | `docs`         | The `docs` dependency group, the `docs` job, and the `site` and `pages` jobs after each release    |
-| `framework`    | ruff and pytest settings for Dagster or FastAPI, and their dev tools                               |
+| `framework`    | ruff and pytest settings for Dagster or FastAPI                                                    |
 
 `python_released`, `python_next` and `python_versions` are computed in `copier.yml`, never asked.
 Add a CPython to `python_released` at its final release, and move `python_next` when the next version reaches its first beta.
@@ -39,8 +40,8 @@ Add a CPython to `python_released` at its final release, and move `python_next` 
 ```text
 copier.yml   the questions, the computed versions, and the settings
 shared/      the files every language takes, with `{% if language == "python" %}` blocks
-base/        a repo with no code: each file is one line, `{% include "shared/..." %}`
-python/      the shared includes, plus ruff, ty, pyproject, src/, tests/ and the release workflows
+none/        a repo with no code: each file is one line, `{% include "shared/..." %}`
+python/      the shared includes, plus ruff, ty, pytest, coverage, typos and the release workflows
 ```
 
 `language` picks the directory Copier renders, through `_subdirectory`.
@@ -57,5 +58,6 @@ Dependabot bumps the pin in each repo made from the template; bump it here too, 
 
 ## Not here
 
-`README.md`, `src/` and `tests/` are written once and never updated, because they are the repo's own after that.
+`README.md`, `LICENSE` and `.gitignore` are GitHub's at `gh repo create`, and `pyproject.toml`, `.python-version` and `src/` are `uv init`'s.
+The template adds beside them and never writes them, which is why pytest, coverage and typos read `pytest.ini`, `.coveragerc` and `typos.toml` instead of `[tool.*]` tables.
 The repository settings, rulesets and environments are applied with `gh`, not written as files.

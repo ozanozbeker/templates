@@ -1,4 +1,5 @@
 # Questions first, then the settings that start with `_`.
+# The repo exists on GitHub first, with its README, LICENSE and .gitignore, then `uv init` writes pyproject.toml, .python-version and src/, and the template adds to both.
 # `language` picks the directory Copier renders; `shared/` holds the files every language includes.
 # A workflow wraps each GitHub `${{ }}` expression in `{% raw %}`, so Jinja leaves it alone; `{% endraw +%}` keeps the line break that `trim_blocks` would drop.
 
@@ -17,18 +18,18 @@ language:
   help: The language, which picks the template directory
   choices:
     Python: python
-    None, a repo of prose and config: base
+    None, a repo of prose and config: none
   default: python
 
 package:
   type: str
-  help: The import name under src/
+  help: The import name under src/, as `uv init` named it
   default: "{{ repo | replace('-', '_') }}"
   when: "{{ language == 'python' }}"
 
 python_floor:
   type: str
-  help: The oldest CPython the repo supports
+  help: The oldest CPython the repo supports, the same as `uv init --python`
   choices: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
   default: "3.14"
   when: "{{ language == 'python' }}"
@@ -91,16 +92,42 @@ _exclude:
   - __pycache__
   - .git
   - .DS_Store
-# Written once, then the repo's own.
-_skip_if_exists:
-  - README.md
-  - src/
-  - tests/
 _message_after_copy: |
-  Next, in {{ _copier_conf.dst_path }}:
+  Append to .gitignore:
+    .rumdl_cache/
+  {% if docs %}
+    # Great Docs build output. `_freeze/` is Quarto's execution cache, and committing it would let a page show cached output after the code changed.
+    great-docs/
+    _great_docs_build/
+    _freeze/
+  {% endif %}
   {% if language == 'python' %}
+  Add the tools, which `uv.lock` pins with no lower bound:
+    uv add --group dev coverage prek pytest ruff ty{% if framework == 'dagster' %} dagster-dg-cli dagster-webserver{% elif framework == 'fastapi' %} httpx{% endif +%}
+  {% if docs %}
+    uv add --group docs 'great-docs>=0.17'
+  {% endif %}
+  Add to [project] in pyproject.toml, with the same versions as the test matrix in ci.yml:
+    classifiers = [
+      "Programming Language :: Python :: 3",
+  {% for v in python_versions %}
+      "Programming Language :: Python :: {{ v }}",
+  {% endfor %}
+      "Typing :: Typed",
+    ]
+    [project.urls]
+    Changelog = "https://github.com/{{ owner }}/{{ repo }}/releases"
+  {% if docs %}
+    Documentation = "https://{{ owner }}.github.io/{{ repo }}/"
+  {% endif %}
+    Homepage = "https://github.com/{{ owner }}/{{ repo }}"
+    Issues = "https://github.com/{{ owner }}/{{ repo }}/issues"
+    Source = "https://github.com/{{ owner }}/{{ repo }}"
+  Write a first test in tests/, because pytest exits 5 with none.
+  Then:
     uv sync && uv run prek install && uv run prek run --all-files
   {% else %}
+  Then:
     uvx prek install && uvx prek run --all-files
   {% endif %}
   Then apply the repository settings: the github-style skill's settings.md.

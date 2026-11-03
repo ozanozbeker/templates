@@ -1,0 +1,15 @@
+[pytest]
+# importlib mode imports the package from the installed wheel, not from src/. tests/ needs no __init__.py.
+addopts = --strict-config --strict-markers --import-mode=importlib -ra
+# A new upstream deprecation fails the Dependabot PR that brings it in, before the removal breaks the package.
+filterwarnings = error
+{% if framework == "fastapi" %}
+# anyio runs each async test on the backend the marker names.
+markers = anyio
+{% endif %}
+{% if framework == "dagster" %}
+# The tests import the project module from the working tree.
+pythonpath = .
+{% endif %}
+testpaths = tests
+xfail_strict = true

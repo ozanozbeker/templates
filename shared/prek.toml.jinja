@@ -72,7 +72,8 @@ hooks = [
   { id = "check-yaml" },
   { id = "check-json" },
   { id = "check-case-conflict" },
-  { id = "check-added-large-files" },
+  # A lockfile is as large as the dependency tree; a Dagster project's `uv.lock` passes 500 KB.
+  { id = "check-added-large-files", exclude = '^uv\.lock$' },
   { id = "detect-private-key" },
 ]
 
