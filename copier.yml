@@ -57,6 +57,11 @@ framework:
   default: ""
   when: "{{ language == 'python' }}"
 
+apply:
+  type: bool
+  help: Run the tasks that append to .gitignore and edit pyproject.toml? They need `--trust`
+  default: true
+
 # --- Computed, never asked ---
 
 # Every CPython with a final release, oldest first. Add a version at its final release, and remove one in the first release after its end of life.
@@ -92,18 +97,58 @@ _exclude:
   - __pycache__
   - .git
   - .DS_Store
+# Tasks run after the files are written, on copy and on update, so each one is idempotent.
+# Copier refuses a template with tasks unless `--trust` is passed, and `--skip-tasks` skips them all.
+_tasks:
+  # `_copier_python` is the interpreter running Copier, so the script needs no shell and no project.
+  - command:
+      - "{{ _copier_python }}"
+      - "{{ _copier_conf.src_path }}/scripts/gitignore.py"
+      - ".rumdl_cache/"
+      - "{% if docs %}great-docs/{% endif %}"
+      - "{% if docs %}_great_docs_build/{% endif %}"
+      - "{% if docs %}_freeze/{% endif %}"
+    when: "{{ apply }}"
+  # One script for pyproject.toml, which returns at once where the file is absent: `copier update` runs the
+  # tasks in the empty reference renders it diffs, as well as in the repo. `--no-project` keeps tomlkit out of the repo's own environment.
+  - command:
+      - uv
+      - run
+      - --no-project
+      - --with
+      - tomlkit
+      - "{{ _copier_conf.src_path }}/scripts/pyproject.py"
+      - --owner
+      - "{{ owner }}"
+      - --repo
+      - "{{ repo }}"
+      - --versions
+      - "{{ python_versions | join(',') }}"
+      - --docs
+      - "{{ docs }}"
+      - --dev
+      - coverage
+      - prek
+      - pytest
+      - ruff
+      - ty
+      - "{% if framework == 'dagster' %}dagster-dg-cli{% endif %}"
+      - "{% if framework == 'dagster' %}dagster-webserver{% endif %}"
+      - "{% if framework == 'fastapi' %}httpx{% endif %}"
+    when: "{{ apply and language == 'python' }}"
+
 _message_after_copy: |
+  {% if not apply %}
   Append to .gitignore:
     .rumdl_cache/
   {% if docs %}
-    # Great Docs build output. `_freeze/` is Quarto's execution cache, and committing it would let a page show cached output after the code changed.
     great-docs/
     _great_docs_build/
     _freeze/
   {% endif %}
   {% if language == 'python' %}
-  Add the tools, which `uv.lock` pins with no lower bound:
-    uv add --group dev coverage prek pytest ruff ty{% if framework == 'dagster' %} dagster-dg-cli dagster-webserver{% elif framework == 'fastapi' %} httpx{% endif +%}
+  Add the tools:
+    uv add --raw --group dev coverage prek pytest ruff ty{% if framework == 'dagster' %} dagster-dg-cli dagster-webserver{% elif framework == 'fastapi' %} httpx{% endif +%}
   {% if docs %}
     uv add --group docs 'great-docs>=0.17'
   {% endif %}
@@ -123,11 +168,14 @@ _message_after_copy: |
     Homepage = "https://github.com/{{ owner }}/{{ repo }}"
     Issues = "https://github.com/{{ owner }}/{{ repo }}/issues"
     Source = "https://github.com/{{ owner }}/{{ repo }}"
-  Write a first test in tests/, because pytest exits 5 with none.
+  {% endif %}
+  {% endif %}
+  {% if language == 'python' %}
+  Replace the hello() stub uv init wrote, and write a first test in tests/, because pytest exits 5 with none.
   Then:
     uv sync && uv run prek install && uv run prek run --all-files
   {% else %}
   Then:
-    uvx prek install && uvx prek run --all-files
+    prek install && prek run --all-files
   {% endif %}
   Then apply the repository settings: the github-style skill's settings.md.
