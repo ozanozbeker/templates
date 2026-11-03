@@ -142,7 +142,7 @@ def test_layers_merge_toml_arrays_without_duplicates(tmp_path: Path) -> None:
     assert rumdl["global"]["exclude"] == ["docs/agents/", "CHANGELOG.md"]
     assert rumdl["global"]["flavor"] == "quarto"
     ruff = tomlkit.parse((tmp_path / "ruff.toml").read_text())
-    assert "CPY001" in ruff["lint"]["ignore"]
+    assert "COM812" in ruff["lint"]["ignore"]
     assert "**/definitions.py" in ruff["lint"]["per-file-ignores"]
 
 

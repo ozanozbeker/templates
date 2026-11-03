@@ -12,7 +12,6 @@ exclude = [
 respect-gitignore = true
 
 # One sentence per line, so a diff shows the sentence that changed.
-flavor = "quarto"
 
 [MD013]
 line-length = 0

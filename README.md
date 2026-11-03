@@ -44,4 +44,5 @@ Run `uv sync` and `prek install` in the repo afterwards.
 Add a version at its final release, and move `NEXT` when the next version reaches its first beta.
 The workflows pin each action to a SHA, and the repo's own Dependabot and `prek-update` keep the copies under `base/` and `layers/` current.
 
-`tests/test_compose.py` composes every layer combination and checks that each file parses and holds no placeholder.
+`uvx --with tomlkit pytest tests` composes every layer combination and checks that each file parses and holds no placeholder.
+The repo itself is the base alone: `compose.py` declares its dependencies inline, so it needs no project.
