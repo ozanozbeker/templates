@@ -1,10 +1,30 @@
 # templates
 
-A [Copier](https://copier.readthedocs.io/) template for every repo: the hooks, configs and workflows, with the reason for each setting as a comment beside it.
+A [Copier](https://copier.readthedocs.io/) template for every repo I start: hooks, configs and workflows, with the reason for each setting beside it.
 
 ## Use it
 
-Create the repo on GitHub, let `uv init` write the project, then render the template into the clone:
+Create the repo on GitHub first, with the README, license and `.gitignore` GitHub offers, then render the template into the clone.
+Copier never writes a file that GitHub or `uv init` wrote.
+A repo made from the template keeps a `.copier-answers.yml`, and `copier update` in it later re-applies the newest tag and merges the change onto the repo's own edits.
+
+### None
+
+A repo of prose and config, such as a skills repo.
+Copier is a Python tool, but Homebrew carries it, so the repo needs no Python:
+
+```sh
+gh repo create ozanozbeker/my-repo --public --clone --add-readme --license mit
+cd my-repo
+brew install copier prek
+copier copy gh:ozanozbeker/templates .   # answer `language: none`
+prek install && prek run --all-files
+```
+
+### Python
+
+A package or an application.
+`uv init` writes the project, and the template adds beside it:
 
 ```sh
 gh repo create ozanozbeker/my-repo --public --clone --add-readme --license mit --gitignore Python
@@ -13,11 +33,12 @@ uv init --lib --python 3.14   # or --app
 uvx copier copy gh:ozanozbeker/templates .
 ```
 
-Copier asks the questions in `copier.yml` and writes the files that the answers call for.
-It writes none of the files GitHub or `uv init` wrote, and when it finishes it prints what to add to `.gitignore` and `pyproject.toml` and the `uv add` line for the tools.
+When Copier finishes it prints the `uv add --group dev` line for the tools, the classifiers and `[project.urls]` to add to `pyproject.toml`, and the lines to append to `.gitignore`.
+Apply them, replace the `hello()` stub, write a first test, then:
 
-A repo made from the template keeps a `.copier-answers.yml`.
-When the template changes, `uvx copier update` in that repo re-applies the newest tag and merges the change onto the repo's own edits.
+```sh
+uv sync && uv run prek install && uv run prek run --all-files
+```
 
 ## Questions
 
