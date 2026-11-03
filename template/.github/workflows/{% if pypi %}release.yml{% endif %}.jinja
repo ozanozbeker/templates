@@ -29,7 +29,7 @@ jobs:
           enable-cache: false
       - run: uv build
       # This line checks the wheel PyPI gets carries the typing marker.
-      - run: unzip -l dist/*.whl | grep -q '<package>/py.typed'
+      - run: unzip -l dist/*.whl | grep -q '(( package ))/py.typed'
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dist
@@ -42,7 +42,7 @@ jobs:
     # The environment accepts `v*` tags only and waits for the maintainer's approval.
     environment:
       name: pypi
-      url: https://pypi.org/p/<repo>
+      url: https://pypi.org/p/(( repo ))
     permissions:
       id-token: write
     steps:
@@ -55,6 +55,7 @@ jobs:
         with:
           # A rerun after a partial upload skips the files PyPI already has.
           skip-existing: true
+{% if docs %}
 
   # The site documents the version on PyPI, so it builds after the approved upload.
   # `upload-pages-artifact` keeps its artifact for 1 day, so the build also waits for the approval.
@@ -106,3 +107,4 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+{% endif %}

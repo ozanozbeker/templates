@@ -1,9 +1,0 @@
-[lint]
-ignore = [
-  # `Depends()` and `Query()` in a parameter default are how FastAPI declares dependencies.
-  "B008",  # flake8-bugbear > function-call-in-default-argument
-]
-
-# Pydantic and FastAPI read an annotation at runtime, so TC00x must leave their imports outside TYPE_CHECKING.
-[lint.flake8-type-checking]
-runtime-evaluated-base-classes = ["pydantic.BaseModel"]

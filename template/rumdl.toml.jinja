@@ -8,7 +8,15 @@ disable = [
 exclude = [
   # A skill writes these files in its own shape, not one sentence per line.
   "docs/agents/",
+{% if pypi %}
+  # release-please writes the changelog.
+  "CHANGELOG.md",
+{% endif %}
 ]
+{% if python %}
+# `quarto` enables MD078, which requires a label on every executable chunk.
+flavor = "quarto"
+{% endif %}
 respect-gitignore = true
 
 # One sentence per line, so a diff shows the sentence that changed.

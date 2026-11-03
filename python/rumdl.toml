@@ -1,3 +1,0 @@
-[global]
-# `quarto` enables MD078, which requires a label on every executable chunk.
-flavor = "quarto"

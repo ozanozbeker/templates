@@ -14,15 +14,23 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+{% if python %}
   test:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         # The same versions as the Python classifiers in `pyproject.toml`.
-        python: <python-matrix>
+        python: (( python_versions | to_json ))
+{% if python_versions | length > 2 %}
         # An OS difference shows at the floor or the newest Python, so macOS and Windows skip the middle versions.
-        exclude: <python-exclude>
+        exclude:
+{% for os in ["macos-latest", "windows-latest"] %}
+{% for v in python_versions[1:-1] %}
+          - { os: (( os )), python: "(( v ))" }
+{% endfor %}
+{% endfor %}
+{% endif %}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     permissions:
@@ -58,7 +66,7 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
-          python-version: "<python-next>"
+          python-version: "(( python_next ))"
           version: latest-known
           enable-cache: false
       - run: uv sync --locked --no-editable
@@ -85,6 +93,7 @@ jobs:
       - run: uv run --no-sync coverage run -m pytest
       - run: uv run --no-sync coverage report
 
+{% endif %}
   # Local hooks miss a `--no-verify` commit and a fork's commits, so CI runs the hooks on every file and `gitleaks-ci` on every new commit.
   lint:
     runs-on: ubuntu-latest
@@ -99,10 +108,15 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
+          # uv follows setup-uv, which Dependabot bumps after the cooldown.
           version: latest-known
           enable-cache: false
+{% if python %}
       - run: uv sync --locked
       - run: uv run --no-sync prek run --all-files --show-diff-on-failure
+{% else %}
+      - run: uvx prek run --all-files --show-diff-on-failure
+{% endif %}
         env:
           # zizmor skips its online audits without a token.
           GH_TOKEN: ${{ github.token }}
@@ -111,7 +125,12 @@ jobs:
       # gitleaks exits 0 when `git log` fails on a shallow clone, so check that the parent exists first.
       - run: |
           git rev-parse --verify --quiet HEAD^1
+{% if python %}
           uv run --no-sync prek run --all-files --hook-stage manual gitleaks-ci
+{% else %}
+          uvx prek run --all-files --hook-stage manual gitleaks-ci
+{% endif %}
+{% if docs %}
 
   # The build runs every example, so an example with side effects runs in a test against a fake instead.
   docs:
@@ -138,6 +157,7 @@ jobs:
         env:
           # great-docs reads GitHub Releases for the changelog page, and an anonymous runner gets 60 requests an hour.
           GITHUB_TOKEN: ${{ github.token }}
+{% endif %}
 
   # Fails a pull request that adds a dependency with a known vulnerability or a disallowed license. The diff needs a base, so the job runs on pull requests only.
   dependency-review:
@@ -157,14 +177,16 @@ jobs:
   # The ruleset requires this one job, so a change to the jobs above never touches the ruleset.
   all-green:
     if: always()
-    needs: [test, next-python, lowest, lint, docs, dependency-review]
+    needs: [{% if python %}test, next-python, lowest, {% endif %}lint, {% if docs %}docs, {% endif %}dependency-review]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions: {}
     steps:
       - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
         with:
+{% if python %}
           allowed-failures: next-python
+{% endif %}
           # `dependency-review` has no diff on a push to `main`.
           allowed-skips: dependency-review
           jobs: ${{ toJSON(needs) }}

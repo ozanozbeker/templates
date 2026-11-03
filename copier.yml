@@ -1,0 +1,108 @@
+# Questions first, then the settings that start with `_`.
+# Variables render as (( name )) and blocks as {% if %}: `{{` would clash with GitHub's `${{ }}` and `[[` with TOML's `[[repos]]`.
+
+repo:
+  type: str
+  help: The GitHub repository name, which is also the PyPI name
+  default: "(( _copier_conf.dst_path.name ))"
+
+owner:
+  type: str
+  help: The GitHub owner
+  default: ozanozbeker
+
+python:
+  type: bool
+  help: Is this a Python repo?
+  default: true
+
+package:
+  type: str
+  help: The import name under src/
+  default: "(( repo | replace('-', '_') ))"
+  when: "(( python ))"
+
+python_floor:
+  type: str
+  help: The oldest CPython the repo supports
+  choices: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
+  default: "3.14"
+  when: "(( python ))"
+
+pypi:
+  type: bool
+  help: Is it published to PyPI?
+  default: false
+  when: "(( python ))"
+
+docs:
+  type: bool
+  help: Does it have a docs site on GitHub Pages?
+  # A skipped question takes its default, so the default itself must be false off PyPI.
+  default: "{% if pypi %}true{% else %}false{% endif %}"
+  when: "(( pypi ))"
+
+framework:
+  type: str
+  help: The framework, which adds its ruff and pytest settings
+  choices:
+    none: ""
+    Dagster: dagster
+    FastAPI: fastapi
+  default: ""
+  when: "(( python ))"
+
+# --- Computed, never asked ---
+
+# Every CPython with a final release, oldest first. Add a version at its final release, and remove one in the first release after its end of life.
+python_released:
+  type: yaml
+  default: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
+  when: false
+
+# The newest CPython that has reached its first beta. It stays on a version after its final release, until the next version reaches its first beta.
+python_next:
+  type: str
+  default: "3.15"
+  when: false
+
+# The floor and every release above it: the classifiers and the CI matrix.
+python_versions:
+  type: yaml
+  default: "{% set ns = namespace(on=false, out=[]) %}{% for v in python_released %}{% if v == python_floor %}{% set ns.on = true %}{% endif %}{% if ns.on %}{% set ns.out = ns.out + [v] %}{% endif %}{% endfor %}(( ns.out | to_json ))"
+  when: false
+
+# --- Settings ---
+
+_min_copier_version: "9.19.0"
+_subdirectory: template
+_envops:
+  variable_start_string: "(("
+  variable_end_string: "))"
+  block_start_string: "{%"
+  block_end_string: "%}"
+  comment_start_string: "{#"
+  comment_end_string: "#}"
+  keep_trailing_newline: true
+  trim_blocks: true
+  lstrip_blocks: true
+_exclude:
+  - copier.yml
+  - "~*"
+  - "*.py[co]"
+  - __pycache__
+  - .git
+  - .DS_Store
+# Written once, then the repo's own.
+_skip_if_exists:
+  - README.md
+  - src/
+  - tests/
+_message_after_copy: |
+  Next, in (( _copier_conf.dst_path )):
+  {% if python %}
+    uv sync && uv run prek install && uv run prek run --all-files
+  {% else %}
+    uvx prek install && uvx prek run --all-files
+  {% endif %}
+  Then apply the repository settings: the github-style skill's settings.md.

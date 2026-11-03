@@ -25,6 +25,10 @@ jobs:
       # The `commit-msg` hook from `prek.toml` checks the title, so titles and local commits follow one rule set.
       - run: |
           printf '%s\n' "$TITLE" > "$RUNNER_TEMP/title.txt"
+{% if python %}
           uv run --locked --only-dev prek run --stage commit-msg --commit-msg-filename "$RUNNER_TEMP/title.txt" conventional-pre-commit
+{% else %}
+          uvx prek run --stage commit-msg --commit-msg-filename "$RUNNER_TEMP/title.txt" conventional-pre-commit
+{% endif %}
         env:
           TITLE: ${{ github.event.pull_request.title }}

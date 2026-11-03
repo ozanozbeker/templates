@@ -1,8 +1,0 @@
-[dependency-groups]
-dev = [
-  "httpx",
-]
-
-[tool.pytest.ini_options]
-# anyio runs each async test on the backend the marker names.
-markers = ["anyio"]

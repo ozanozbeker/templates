@@ -1,51 +1,52 @@
 # dotfiles
 
-Config files for every repo, composed from a root and layers.
+A [Copier](https://copier.readthedocs.io/) template for every repo: the hooks, configs and workflows, with the reason for each setting as a comment beside it.
 
-The root holds what every repo gets: prek hooks, rumdl, tombi, a `.gitignore`, `SECURITY.md`, Dependabot and the workflows that run on a pull request.
-Each directory is a layer that adds what one kind of repo needs, in the same tree shape.
-`_github/` stands in for `.github/`, so GitHub never runs the workflows on this repo; `compose.py` writes it as `.github/`.
-`compose.py` writes the root and the named layers into a repo, in that order.
-
-## Layers
-
-```text
-_github/              every repo: prek, rumdl, tombi, Dependabot, the pull request workflows
-python/               every Python repo: ruff, ty, pytest, coverage, the uv hooks, a CI matrix from the floor Python up
-python/pypi/          ships to PyPI: release-please, trusted publishing, the docs site, the classifiers PyPI reads
-python/dagster/       ruff and pytest settings for a Dagster project
-python/fastapi/       ruff and pytest settings for a FastAPI app
-```
-
-A layer is its top-level files and its `_github/`; its subdirectories are layers of their own.
-Naming `python/pypi` applies `python` first.
-An app or pipeline with no release takes `python` alone.
-
-## Compose a repo
+## Use it
 
 ```sh
-uv init --lib my_pkg && cd my_pkg
-uv run ~/dotfiles/compose.py --package my_pkg --owner ozanozbeker --python 3.13 python/pypi
+uvx copier copy gh:ozanozbeker/dotfiles my-repo
 ```
 
-`compose.py` merges each layer onto what the repo already has:
+Copier asks the questions in `copier.yml` and writes the files that the answers call for.
+Then, in the new repo:
 
-- A `.toml` file deep-merges.
-  Tables recurse, arrays append without duplicates, and a scalar from the later layer wins, so `uv init`'s `[project]` keeps its name and build system.
-- `.gitignore` appends the lines it lacks.
-- Every other file is copied whole, and the later layer wins.
-  An existing file is kept unless `--force` is passed.
-  `.python-version` is always written, because it carries the floor.
+```sh
+uv sync && uv run prek install && uv run prek run --all-files
+```
 
-After the copy, `<package>`, `<owner>`, `<repo>` and `<python>` are filled, and the Python versions from the floor to the newest release go into the classifiers and the CI matrix.
-Run `uv sync` and `prek install` in the repo afterwards.
+A repo made from the template keeps a `.copier-answers.yml`.
+When the template changes, `uvx copier update` in that repo re-applies the newest tag and merges the change onto the repo's own edits.
 
-## Keep it current
+## Questions
 
-`RELEASED` and `NEXT` in `compose.py` name the CPython versions.
-Add a version at its final release, and move `NEXT` when the next version reaches its first beta.
-The workflows pin each action to a SHA; bump a pin here when Dependabot bumps it in a repo that uses it.
-The root's own `prek.toml`, `rumdl.toml` and `tombi.toml` are copies to hand out, not hooks that run here.
+| Question       | Decides                                                                                            |
+| -------------- | -------------------------------------------------------------------------------------------------- |
+| `repo`         | The GitHub and PyPI name, the links in `pyproject.toml`, `SECURITY.md` and the badges              |
+| `owner`        | The GitHub owner in every link                                                                     |
+| `python`       | ruff, ty, pytest, coverage, the uv hooks, `src/` and `tests/`, and the `test` jobs in CI           |
+| `package`      | The import name under `src/`                                                                       |
+| `python_floor` | `.python-version`, `requires-python`, the classifiers and the CI matrix from the floor up          |
+| `pypi`         | release-please, trusted publishing to PyPI, and the release-please config                          |
+| `docs`         | The `docs` dependency group, the `docs` job, and the `site` and `pages` jobs after each release    |
+| `framework`    | ruff and pytest settings for Dagster or FastAPI, and their dev tools                               |
 
-This repo is a reference, not a project: no hooks, no CI, no config of its own.
-`compose.py` declares its dependencies inline, so `uv run` needs nothing else.
+`python_released`, `python_next` and `python_versions` are computed in `copier.yml`, never asked.
+Add a CPython to `python_released` at its final release, and move `python_next` when the next version reaches its first beta.
+
+## Layout
+
+Everything under `template/` is written to the repo.
+A file that ends in `.jinja` is rendered, and any other file is copied as is.
+A name wrapped in `{% if ... %}` exists only when the answer holds, so `{% if pypi %}release.yml{% endif %}.jinja` is written for a PyPI package only.
+
+Variables render as `(( name ))` and blocks as `{% if %}`: `{{` would clash with GitHub's `${{ }}` and `[[` with TOML's `[[repos]]`.
+Because of the blocks, a `.jinja` file is not valid TOML or YAML until rendered, so the check is to render and run the hooks on the result.
+
+The workflows pin each action to a SHA.
+Dependabot bumps the pin in each repo made from the template; bump it here too, so the next `copier update` does not revert it.
+
+## Not here
+
+`README.md`, `src/` and `tests/` are written once and never updated, because they are the repo's own after that.
+The repository settings, rulesets and environments are applied with `gh`, not written as files.

@@ -1,4 +1,16 @@
+.rumdl_cache/
+.DS_Store
+{% if python %}
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.coverage
+dist/
+{% endif %}
+{% if docs %}
 # Great Docs build output. `_freeze/` is Quarto's execution cache, and committing it would let a page show cached output after the code changed.
 great-docs/
 _great_docs_build/
 _freeze/
+{% endif %}
