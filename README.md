@@ -3,28 +3,29 @@
 Config files for every repo, composed from a base and layers.
 
 The root holds what every repo gets: prek hooks, rumdl, tombi, a `.gitignore`, `SECURITY.md`, Dependabot and the workflows that run on a pull request.
-Each directory is a layer that adds what one kind of project needs, in the same tree shape.
+Each directory is a layer that adds what one kind of repo needs, in the same tree shape.
 `_github/` stands in for `.github/`, so GitHub never runs the workflows on this repo; `compose.py` writes it as `.github/`.
 `compose.py` writes the root and the named layers into a repo, in that order.
 
 ## Layers
 
-| Layer     | Adds                                                                                |
-| --------- | ----------------------------------------------------------------------------------- |
-| `python`  | ruff, ty, pytest, coverage, the uv hooks, and a CI matrix from the floor Python up  |
-| `library` | release-please, PyPI trusted publishing, a docs job, and the classifiers PyPI reads |
-| `dagster` | ruff and pytest settings for a Dagster project                                      |
-| `fastapi` | ruff and pytest settings for a FastAPI app                                          |
+```text
+_github/              every repo: prek, rumdl, tombi, Dependabot, the pull request workflows
+python/               every Python repo: ruff, ty, pytest, coverage, the uv hooks, a CI matrix from the floor Python up
+python/pypi/          ships to PyPI: release-please, trusted publishing, the docs site, the classifiers PyPI reads
+python/dagster/       ruff and pytest settings for a Dagster project
+python/fastapi/       ruff and pytest settings for a FastAPI app
+```
 
-`python` comes first.
-`library` is for a package on PyPI; an app skips it.
-`dagster` and `fastapi` sit on top of either.
+A layer is its top-level files and its `_github/`; its subdirectories are layers of their own.
+Naming `python/pypi` applies `python` first.
+An app or pipeline with no release takes `python` alone.
 
 ## Compose a repo
 
 ```sh
 uv init --lib my_pkg && cd my_pkg
-uv run ~/dotfiles/compose.py --package my_pkg --owner ozanozbeker --python 3.13 python library
+uv run ~/dotfiles/compose.py --package my_pkg --owner ozanozbeker --python 3.13 python/pypi
 ```
 
 `compose.py` merges each layer onto what the repo already has:

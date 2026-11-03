@@ -4,10 +4,12 @@
 # ///
 """Compose a repo's config files from this repo's root and the layers named on the command line.
 
-The root is the base every repo gets, and each top-level directory is a layer that mirrors the repo tree. A `.toml` file deep-merges onto what the destination already has, a `.gitignore`
-appends the lines it lacks, and every other file is copied whole, with the later layer winning. After the copy,
-the placeholders `<package>`, `<owner>`, `<repo>` and `<python>` are filled, and the Python versions from the
-floor to the newest release go into the classifiers and the CI matrix.
+The root is what every repo gets, and each directory is a layer that mirrors the repo tree. A nested layer
+such as `python/pypi` applies after its ancestors, so naming it is enough. A `.toml` file deep-merges onto
+what the destination already has, a `.gitignore` appends the lines it lacks, and every other file is copied
+whole, with the later layer winning. After the copy, the placeholders `<package>`, `<owner>`, `<repo>` and
+`<python>` are filled, and the Python versions from the floor to the newest release go into the classifiers
+and the CI matrix.
 """
 
 from __future__ import annotations
@@ -118,15 +120,25 @@ def add_classifiers(text: str, floor: str) -> str:
 
 
 def layer_files(layer: Path) -> list[Path]:
-    """Return every file under `layer`, as a path relative to it."""
-    if layer == ROOT:
-        # The root is also the repo: its own files and the layer directories are not config.
-        top = [path for path in ROOT.iterdir() if path.is_file() and path.name not in NOT_CONFIG]
-        workflows = [path for path in (ROOT / GITHUB).rglob("*") if path.is_file()]
-        files = [*top, *workflows]
-    else:
-        files = [path for path in layer.rglob("*") if path.is_file()]
-    return sorted(path.relative_to(layer) for path in files if path.name != ".DS_Store")
+    """Return a layer's own files, relative to it: its top-level files and `_github/`, never a nested layer."""
+    top = [path for path in layer.iterdir() if path.is_file() and path.name not in NOT_CONFIG]
+    github = [path for path in (layer / GITHUB).rglob("*") if path.is_file()]
+    return sorted(path.relative_to(layer) for path in [*top, *github] if path.name != ".DS_Store")
+
+
+def resolve_layers(names: list[str]) -> list[Path]:
+    """Return the root, then each named layer after its ancestors, each once, in the order first named."""
+    layers = [ROOT]
+    for name in names:
+        parts = Path(name).parts
+        for depth in range(1, len(parts) + 1):
+            layer = ROOT / Path(*parts[:depth])
+            if not layer.is_dir() or layer.name.startswith((".", "_")):
+                message = f"no such layer: {name}"
+                raise SystemExit(message)
+            if layer not in layers:
+                layers.append(layer)
+    return layers
 
 
 def compose(dest: Path, layers: list[Path], *, force: bool) -> set[Path]:
@@ -177,7 +189,7 @@ def main() -> None:
     parser.add_argument(
         "layers",
         nargs="*",
-        help="layer directories at the repo root, applied after the root in this order",
+        help="layer paths such as python or python/pypi, each applied after its ancestors",
     )
     parser.add_argument(
         "--dest",
@@ -206,11 +218,7 @@ def main() -> None:
     args = parser.parse_args()
 
     repo = args.repo or args.package.replace("_", "-")
-    layers = [ROOT, *(ROOT / name for name in args.layers)]
-    for layer in layers:
-        if not layer.is_dir() or layer.name in {GITHUB, ".git"}:
-            message = f"no such layer: {layer}"
-            raise SystemExit(message)
+    layers = resolve_layers(args.layers)
 
     written = compose(args.dest.resolve(), layers, force=args.force)
     for target in sorted(written):
