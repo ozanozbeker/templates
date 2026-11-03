@@ -49,7 +49,7 @@ A new language is a new directory with the same includes and its own files.
 A file that ends in `.jinja` is rendered, and any other file is copied as is.
 A name wrapped in `{% if ... %}` exists only when the answer holds, so `{% if pypi %}release.yml{% endif %}.jinja` is written for a PyPI package only.
 
-Variables render as `(( name ))` and blocks as `{% if %}`: `{{` would clash with GitHub's `${{ }}` and `[[` with TOML's `[[repos]]`.
+A workflow wraps each GitHub `${{ }}` expression in `{% raw %}`, so Jinja leaves it alone; the `+%}` on `endraw` keeps the line break that `trim_blocks` would otherwise drop.
 Because of the blocks, a `.jinja` file is not valid TOML or YAML until rendered, so the check is to render and run the hooks on the result.
 
 The workflows pin each action to a SHA.

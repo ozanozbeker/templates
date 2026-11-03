@@ -10,8 +10,8 @@ on:
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: {% raw %}${{ github.workflow }}{% endraw %}-{% raw %}${{ github.ref }}{% endraw +%}
+  cancel-in-progress: {% raw %}${{ github.event_name == 'pull_request' }}{% endraw +%}
 
 jobs:
 {% if language == "python" %}
@@ -21,17 +21,17 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         # The same versions as the Python classifiers in `pyproject.toml`.
-        python: (( python_versions | to_json ))
+        python: {{ python_versions | to_json }}
 {% if python_versions | length > 2 %}
         # An OS difference shows at the floor or the newest Python, so macOS and Windows skip the middle versions.
         exclude:
 {% for os in ["macos-latest", "windows-latest"] %}
 {% for v in python_versions[1:-1] %}
-          - { os: (( os )), python: "(( v ))" }
+          - { os: {{ os }}, python: "{{ v }}" }
 {% endfor %}
 {% endfor %}
 {% endif %}
-    runs-on: ${{ matrix.os }}
+    runs-on: {% raw %}${{ matrix.os }}{% endraw +%}
     timeout-minutes: 15
     permissions:
       contents: read
@@ -44,7 +44,7 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
-          python-version: ${{ matrix.python }}
+          python-version: {% raw %}${{ matrix.python }}{% endraw +%}
           # uv follows setup-uv, which Dependabot bumps after the cooldown.
           version: latest-known
           # Every dependency is a pre-built wheel, so a cache hit saves nothing.
@@ -66,7 +66,7 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
-          python-version: "(( python_next ))"
+          python-version: "{{ python_next }}"
           version: latest-known
           enable-cache: false
       - run: uv sync --locked --no-editable
@@ -119,7 +119,7 @@ jobs:
 {% endif %}
         env:
           # zizmor skips its online audits without a token.
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: {% raw %}${{ github.token }}{% endraw +%}
           # Both read staged changes only, and CI stages nothing.
           SKIP: gitleaks,check-added-large-files
       # gitleaks exits 0 when `git log` fails on a shallow clone, so check that the parent exists first.
@@ -156,7 +156,7 @@ jobs:
       - run: uv run --no-sync great-docs build
         env:
           # great-docs reads GitHub Releases for the changelog page, and an anonymous runner gets 60 requests an hour.
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: {% raw %}${{ github.token }}{% endraw +%}
 {% endif %}
 
   # Fails a pull request that adds a dependency with a known vulnerability or a disallowed license. The diff needs a base, so the job runs on pull requests only.
@@ -189,4 +189,4 @@ jobs:
 {% endif %}
           # `dependency-review` has no diff on a push to `main`.
           allowed-skips: dependency-review
-          jobs: ${{ toJSON(needs) }}
+          jobs: {% raw %}${{ toJSON(needs) }}{% endraw +%}

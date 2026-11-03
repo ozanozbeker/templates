@@ -83,14 +83,14 @@ jobs:
       - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         id: app
         with:
-          client-id: ${{ vars.APP_CLIENT_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          client-id: {% raw %}${{ vars.APP_CLIENT_ID }}{% endraw +%}
+          private-key: {% raw %}${{ secrets.APP_PRIVATE_KEY }}{% endraw +%}
           permission-contents: write
           permission-pull-requests: write
       - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         id: pr
         with:
-          token: ${{ steps.app.outputs.token }}
+          token: {% raw %}${{ steps.app.outputs.token }}{% endraw +%}
           sign-commits: true
           branch: prek-update
           delete-branch: true
@@ -106,5 +106,5 @@ jobs:
       - if: steps.pr.outputs.pull-request-operation == 'created'
         run: gh pr merge --auto --squash "$PR_URL"
         env:
-          PR_URL: ${{ steps.pr.outputs.pull-request-url }}
-          GH_TOKEN: ${{ steps.app.outputs.token }}
+          PR_URL: {% raw %}${{ steps.pr.outputs.pull-request-url }}{% endraw +%}
+          GH_TOKEN: {% raw %}${{ steps.app.outputs.token }}{% endraw +%}

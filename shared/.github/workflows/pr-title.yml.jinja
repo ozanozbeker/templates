@@ -31,4 +31,4 @@ jobs:
           uvx prek run --stage commit-msg --commit-msg-filename "$RUNNER_TEMP/title.txt" conventional-pre-commit
 {% endif %}
         env:
-          TITLE: ${{ github.event.pull_request.title }}
+          TITLE: {% raw %}${{ github.event.pull_request.title }}{% endraw +%}

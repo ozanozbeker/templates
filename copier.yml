@@ -1,11 +1,11 @@
 # Questions first, then the settings that start with `_`.
 # `language` picks the directory Copier renders; `shared/` holds the files every language includes.
-# Variables render as (( name )) and blocks as {% if %}: `{{` would clash with GitHub's `${{ }}` and `[[` with TOML's `[[repos]]`.
+# A workflow wraps each GitHub `${{ }}` expression in `{% raw %}`, so Jinja leaves it alone; `{% endraw +%}` keeps the line break that `trim_blocks` would drop.
 
 repo:
   type: str
   help: The GitHub repository name, which is also the PyPI name
-  default: "(( _copier_conf.dst_path.name ))"
+  default: "{{ _copier_conf.dst_path.name }}"
 
 owner:
   type: str
@@ -23,28 +23,28 @@ language:
 package:
   type: str
   help: The import name under src/
-  default: "(( repo | replace('-', '_') ))"
-  when: "(( language == 'python' ))"
+  default: "{{ repo | replace('-', '_') }}"
+  when: "{{ language == 'python' }}"
 
 python_floor:
   type: str
   help: The oldest CPython the repo supports
   choices: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
   default: "3.14"
-  when: "(( language == 'python' ))"
+  when: "{{ language == 'python' }}"
 
 pypi:
   type: bool
   help: Is it published to PyPI?
   default: false
-  when: "(( language == 'python' ))"
+  when: "{{ language == 'python' }}"
 
 docs:
   type: bool
   help: Does it have a docs site on GitHub Pages?
   # A skipped question takes its default, so the default itself must be false off PyPI.
   default: "{% if pypi %}true{% else %}false{% endif %}"
-  when: "(( pypi ))"
+  when: "{{ pypi }}"
 
 framework:
   type: str
@@ -54,7 +54,7 @@ framework:
     Dagster: dagster
     FastAPI: fastapi
   default: ""
-  when: "(( language == 'python' ))"
+  when: "{{ language == 'python' }}"
 
 # --- Computed, never asked ---
 
@@ -73,20 +73,14 @@ python_next:
 # The floor and every release above it: the classifiers and the CI matrix.
 python_versions:
   type: yaml
-  default: "{% set ns = namespace(on=false, out=[]) %}{% for v in python_released %}{% if v == python_floor %}{% set ns.on = true %}{% endif %}{% if ns.on %}{% set ns.out = ns.out + [v] %}{% endif %}{% endfor %}(( ns.out | to_json ))"
+  default: "{% set ns = namespace(on=false, out=[]) %}{% for v in python_released %}{% if v == python_floor %}{% set ns.on = true %}{% endif %}{% if ns.on %}{% set ns.out = ns.out + [v] %}{% endif %}{% endfor %}{{ ns.out | to_json }}"
   when: false
 
 # --- Settings ---
 
 _min_copier_version: "9.19.0"
-_subdirectory: "(( language ))"
+_subdirectory: "{{ language }}"
 _envops:
-  variable_start_string: "(("
-  variable_end_string: "))"
-  block_start_string: "{%"
-  block_end_string: "%}"
-  comment_start_string: "{#"
-  comment_end_string: "#}"
   keep_trailing_newline: true
   trim_blocks: true
   lstrip_blocks: true
@@ -103,7 +97,7 @@ _skip_if_exists:
   - src/
   - tests/
 _message_after_copy: |
-  Next, in (( _copier_conf.dst_path )):
+  Next, in {{ _copier_conf.dst_path }}:
   {% if language == 'python' %}
     uv sync && uv run prek install && uv run prek run --all-files
   {% else %}

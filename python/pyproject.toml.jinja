@@ -1,14 +1,14 @@
 [project]
-name = "(( repo ))"
+name = "{{ repo }}"
 version = "0.0.0"
 description = ""
 readme = "README.md"
-requires-python = ">=(( python_floor ))"
+requires-python = ">={{ python_floor }}"
 # The Python classifiers and the test matrix in `ci.yml` list the same versions.
 classifiers = [
   "Programming Language :: Python :: 3",
 {% for v in python_versions %}
-  "Programming Language :: Python :: (( v ))",
+  "Programming Language :: Python :: {{ v }}",
 {% endfor %}
   "Typing :: Typed",
 ]
@@ -16,13 +16,13 @@ dependencies = []
 
 # PyPI's sidebar shows these links, and the Changelog one points at the GitHub releases page.
 [project.urls]
-Changelog = "https://github.com/(( owner ))/(( repo ))/releases"
+Changelog = "https://github.com/{{ owner }}/{{ repo }}/releases"
 {% if docs %}
-Documentation = "https://(( owner )).github.io/(( repo ))/"
+Documentation = "https://{{ owner }}.github.io/{{ repo }}/"
 {% endif %}
-Homepage = "https://github.com/(( owner ))/(( repo ))"
-Issues = "https://github.com/(( owner ))/(( repo ))/issues"
-Source = "https://github.com/(( owner ))/(( repo ))"
+Homepage = "https://github.com/{{ owner }}/{{ repo }}"
+Issues = "https://github.com/{{ owner }}/{{ repo }}/issues"
+Source = "https://github.com/{{ owner }}/{{ repo }}"
 
 [dependency-groups]
 # The tools have no lower bound, because `uv.lock` pins each one and an upgrade moves it to the latest release.
@@ -49,7 +49,7 @@ requires = ["uv_build>=0.13.7,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.coverage.run]
-source_pkgs = ["(( package ))"]
+source_pkgs = ["{{ package }}"]
 
 [tool.coverage.report]
 # Every other exclusion is a `# pragma: no cover` that a reviewer sees.

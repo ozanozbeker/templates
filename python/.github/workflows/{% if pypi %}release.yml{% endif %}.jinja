@@ -29,7 +29,7 @@ jobs:
           enable-cache: false
       - run: uv build
       # This line checks the wheel PyPI gets carries the typing marker.
-      - run: unzip -l dist/*.whl | grep -q '(( package ))/py.typed'
+      - run: unzip -l dist/*.whl | grep -q '{{ package }}/py.typed'
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dist
@@ -42,7 +42,7 @@ jobs:
     # The environment accepts `v*` tags only and waits for the maintainer's approval.
     environment:
       name: pypi
-      url: https://pypi.org/p/(( repo ))
+      url: https://pypi.org/p/{{ repo }}
     permissions:
       id-token: write
     steps:
@@ -83,7 +83,7 @@ jobs:
       - run: uv run --no-sync great-docs build
         env:
           # great-docs reads GitHub Releases for the changelog page, and an anonymous runner gets 60 requests an hour.
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: {% raw %}${{ github.token }}{% endraw +%}
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: great-docs/_site
@@ -103,7 +103,7 @@ jobs:
     # The environment accepts `v*` tags only.
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: {% raw %}${{ steps.deployment.outputs.page_url }}{% endraw +%}
     steps:
       - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
