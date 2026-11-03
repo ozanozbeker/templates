@@ -42,7 +42,7 @@ Run `uv sync` and `prek install` in the repo afterwards.
 
 `RELEASED` and `NEXT` in `compose.py` name the CPython versions.
 Add a version at its final release, and move `NEXT` when the next version reaches its first beta.
-The workflows pin each action to a SHA, and the repo's own Dependabot and `prek-update` keep the copies under `base/` and `layers/` current.
+The workflows pin each action to a SHA; bump a pin here when Dependabot bumps it in a repo that uses it.
 
-`uvx --with tomlkit pytest tests` composes every layer combination and checks that each file parses and holds no placeholder.
-The repo itself is the base alone: `compose.py` declares its dependencies inline, so it needs no project.
+This repo is a reference, not a project: no hooks, no CI, no config of its own.
+`compose.py` declares its dependencies inline, so `uv run` needs nothing else.
