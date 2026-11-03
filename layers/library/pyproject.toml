@@ -1,0 +1,6 @@
+[project]
+urls.Documentation = "https://<owner>.github.io/<repo>/"
+
+[dependency-groups]
+# Not in `dev`, so the test and lint jobs skip Quarto's Jupyter stack.
+docs = ["great-docs>=0.17"]

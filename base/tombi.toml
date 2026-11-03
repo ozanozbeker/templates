@@ -1,0 +1,5 @@
+# prek.toml uses multi-line inline tables, which TOML 1.1 adds, so an editor's TOML server reads every file as 1.1.
+toml-version = "v1.1.0"
+
+[files]
+exclude = ["uv.lock"]

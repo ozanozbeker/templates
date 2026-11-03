@@ -1,0 +1,9 @@
+[dependency-groups]
+dev = [
+  "dagster-dg-cli",
+  "dagster-webserver",
+]
+
+[tool.pytest.ini_options]
+# The tests import the project module from the working tree.
+pythonpath = ["."]

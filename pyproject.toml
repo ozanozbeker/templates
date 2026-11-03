@@ -1,0 +1,35 @@
+[project]
+name = "dotfiles"
+version = "0.0.0"
+description = "Config files for every repo, composed from a base and layers."
+requires-python = ">=3.14"
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/ozanozbeker/dotfiles"
+Issues = "https://github.com/ozanozbeker/dotfiles/issues"
+Source = "https://github.com/ozanozbeker/dotfiles"
+
+[dependency-groups]
+dev = [
+  "prek",
+  "pytest",
+  "ruff",
+  "tomlkit",
+  "ty",
+]
+
+[tool.pytest.ini_options]
+addopts = ["--strict-config", "--strict-markers", "-ra"]
+# A new upstream deprecation fails the Dependabot PR that brings it in.
+filterwarnings = ["error"]
+testpaths = ["tests"]
+xfail_strict = true
+
+[tool.typos.default.extend-identifiers]
+# The ruff rule for flake8-copyright.
+CPY001 = "CPY001"
+
+[tool.uv]
+# The repo is a script and its layers, not a distribution.
+package = false

@@ -1,0 +1,3 @@
+# The layers hold prek.toml files to copy, not projects to run.
+base/
+layers/

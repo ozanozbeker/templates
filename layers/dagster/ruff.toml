@@ -1,0 +1,30 @@
+[lint.pep8-naming]
+classmethod-decorators = ["dataframely.rule"]
+
+[lint.per-file-ignores]
+# A definitions.py holds the code location entry point and nothing else, so both the module and its `defs()` would be documenting the same one fact.
+"**/definitions.py" = [
+  "D100",  # pydocstyle > undocumented-public-module
+  "D103",  # pydocstyle > undocumented-public-function
+]
+# Asset, op and sensor modules.
+"**/defs/**" = [
+  "PLR0913",  # Pylint Refactor > too-many-arguments
+  "INP001",  # flake8-implicit-namespace-package > implicit-namespace-package
+]
+
+# These read an annotation at runtime, so TC00x must leave their imports outside TYPE_CHECKING.
+[lint.flake8-type-checking]
+runtime-evaluated-base-classes = [
+  "dagster.Config",
+  "dagster.ConfigurableResource",
+  "dagster.ConfigurableIOManager",
+  "pydantic.BaseModel",
+]
+runtime-evaluated-decorators = [
+  "dagster.asset",
+  "dagster.multi_asset",
+  "dagster.graph_asset",
+  "dagster.op",
+  "dagster.asset_check",
+]

@@ -1,0 +1,5 @@
+[global]
+exclude = [
+  # release-please writes the changelog.
+  "CHANGELOG.md",
+]
