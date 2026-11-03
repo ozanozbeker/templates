@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-{% if python %}
+{% if language == "python" %}
   test:
     strategy:
       fail-fast: false
@@ -111,7 +111,7 @@ jobs:
           # uv follows setup-uv, which Dependabot bumps after the cooldown.
           version: latest-known
           enable-cache: false
-{% if python %}
+{% if language == "python" %}
       - run: uv sync --locked
       - run: uv run --no-sync prek run --all-files --show-diff-on-failure
 {% else %}
@@ -125,7 +125,7 @@ jobs:
       # gitleaks exits 0 when `git log` fails on a shallow clone, so check that the parent exists first.
       - run: |
           git rev-parse --verify --quiet HEAD^1
-{% if python %}
+{% if language == "python" %}
           uv run --no-sync prek run --all-files --hook-stage manual gitleaks-ci
 {% else %}
           uvx prek run --all-files --hook-stage manual gitleaks-ci
@@ -177,14 +177,14 @@ jobs:
   # The ruleset requires this one job, so a change to the jobs above never touches the ruleset.
   all-green:
     if: always()
-    needs: [{% if python %}test, next-python, lowest, {% endif %}lint, {% if docs %}docs, {% endif %}dependency-review]
+    needs: [{% if language == "python" %}test, next-python, lowest, {% endif %}lint, {% if docs %}docs, {% endif %}dependency-review]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions: {}
     steps:
       - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # v1.3.0
         with:
-{% if python %}
+{% if language == "python" %}
           allowed-failures: next-python
 {% endif %}
           # `dependency-review` has no diff on a push to `main`.

@@ -1,11 +1,11 @@
-# dotfiles
+# templates
 
 A [Copier](https://copier.readthedocs.io/) template for every repo: the hooks, configs and workflows, with the reason for each setting as a comment beside it.
 
 ## Use it
 
 ```sh
-uvx copier copy gh:ozanozbeker/dotfiles my-repo
+uvx copier copy gh:ozanozbeker/templates my-repo
 ```
 
 Copier asks the questions in `copier.yml` and writes the files that the answers call for.
@@ -24,7 +24,7 @@ When the template changes, `uvx copier update` in that repo re-applies the newes
 | -------------- | -------------------------------------------------------------------------------------------------- |
 | `repo`         | The GitHub and PyPI name, the links in `pyproject.toml`, `SECURITY.md` and the badges              |
 | `owner`        | The GitHub owner in every link                                                                     |
-| `python`       | ruff, ty, pytest, coverage, the uv hooks, `src/` and `tests/`, and the `test` jobs in CI           |
+| `language`     | The template directory: `python`, or `base` for a repo of prose and config                        |
 | `package`      | The import name under `src/`                                                                       |
 | `python_floor` | `.python-version`, `requires-python`, the classifiers and the CI matrix from the floor up          |
 | `pypi`         | release-please, trusted publishing to PyPI, and the release-please config                          |
@@ -36,7 +36,16 @@ Add a CPython to `python_released` at its final release, and move `python_next` 
 
 ## Layout
 
-Everything under `template/` is written to the repo.
+```text
+copier.yml   the questions, the computed versions, and the settings
+shared/      the files every language takes, with `{% if language == "python" %}` blocks
+base/        a repo with no code: each file is one line, `{% include "shared/..." %}`
+python/      the shared includes, plus ruff, ty, pyproject, src/, tests/ and the release workflows
+```
+
+`language` picks the directory Copier renders, through `_subdirectory`.
+A new language is a new directory with the same includes and its own files.
+
 A file that ends in `.jinja` is rendered, and any other file is copied as is.
 A name wrapped in `{% if ... %}` exists only when the answer holds, so `{% if pypi %}release.yml{% endif %}.jinja` is written for a PyPI package only.
 

@@ -1,6 +1,6 @@
 name: Update hooks
 
-{% if python %}
+{% if language == "python" %}
 # Dependabot does not read `prek.toml`, and its version updates move only the dependencies `pyproject.toml` declares, so this workflow updates the hooks and every package in `uv.lock`.
 {% else %}
 # Dependabot does not read `prek.toml`, so this workflow updates the hooks.
@@ -14,7 +14,7 @@ on:
 permissions: {}
 
 jobs:
-{% if python %}
+{% if language == "python" %}
   # `uv lock` can run a package's build backend, so this job holds no secret.
   update:
     runs-on: ubuntu-latest
@@ -94,7 +94,7 @@ jobs:
           sign-commits: true
           branch: prek-update
           delete-branch: true
-{% if python %}
+{% if language == "python" %}
           commit-message: "chore: update prek hooks and uv.lock"
           title: "chore: update prek hooks and uv.lock"
           body: "`prek update --freeze --cooldown-days 7` or `uv lock --upgrade --exclude-newer '7 days'` found newer releases."

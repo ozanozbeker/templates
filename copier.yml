@@ -1,4 +1,5 @@
 # Questions first, then the settings that start with `_`.
+# `language` picks the directory Copier renders; `shared/` holds the files every language includes.
 # Variables render as (( name )) and blocks as {% if %}: `{{` would clash with GitHub's `${{ }}` and `[[` with TOML's `[[repos]]`.
 
 repo:
@@ -11,29 +12,32 @@ owner:
   help: The GitHub owner
   default: ozanozbeker
 
-python:
-  type: bool
-  help: Is this a Python repo?
-  default: true
+language:
+  type: str
+  help: The language, which picks the template directory
+  choices:
+    Python: python
+    None, a repo of prose and config: base
+  default: python
 
 package:
   type: str
   help: The import name under src/
   default: "(( repo | replace('-', '_') ))"
-  when: "(( python ))"
+  when: "(( language == 'python' ))"
 
 python_floor:
   type: str
   help: The oldest CPython the repo supports
   choices: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
   default: "3.14"
-  when: "(( python ))"
+  when: "(( language == 'python' ))"
 
 pypi:
   type: bool
   help: Is it published to PyPI?
   default: false
-  when: "(( python ))"
+  when: "(( language == 'python' ))"
 
 docs:
   type: bool
@@ -50,7 +54,7 @@ framework:
     Dagster: dagster
     FastAPI: fastapi
   default: ""
-  when: "(( python ))"
+  when: "(( language == 'python' ))"
 
 # --- Computed, never asked ---
 
@@ -75,7 +79,7 @@ python_versions:
 # --- Settings ---
 
 _min_copier_version: "9.19.0"
-_subdirectory: template
+_subdirectory: "(( language ))"
 _envops:
   variable_start_string: "(("
   variable_end_string: "))"
@@ -100,7 +104,7 @@ _skip_if_exists:
   - tests/
 _message_after_copy: |
   Next, in (( _copier_conf.dst_path )):
-  {% if python %}
+  {% if language == 'python' %}
     uv sync && uv run prek install && uv run prek run --all-files
   {% else %}
     uvx prek install && uvx prek run --all-files

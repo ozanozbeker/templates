@@ -13,7 +13,7 @@ exclude = [
   "CHANGELOG.md",
 {% endif %}
 ]
-{% if python %}
+{% if language == "python" %}
 # `quarto` enables MD078, which requires a label on every executable chunk.
 flavor = "quarto"
 {% endif %}
