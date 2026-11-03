@@ -1,6 +1,6 @@
 # dotfiles
 
-Config files for every repo, composed from a base and layers.
+Config files for every repo, composed from a root and layers.
 
 The root holds what every repo gets: prek hooks, rumdl, tombi, a `.gitignore`, `SECURITY.md`, Dependabot and the workflows that run on a pull request.
 Each directory is a layer that adds what one kind of repo needs, in the same tree shape.
