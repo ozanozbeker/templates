@@ -4,6 +4,7 @@ Config files for every repo, composed from a base and layers.
 
 The root holds what every repo gets: prek hooks, rumdl, tombi, a `.gitignore`, `SECURITY.md`, Dependabot and the workflows that run on a pull request.
 Each directory is a layer that adds what one kind of project needs, in the same tree shape.
+`_github/` stands in for `.github/`, so GitHub never runs the workflows on this repo; `compose.py` writes it as `.github/`.
 `compose.py` writes the root and the named layers into a repo, in that order.
 
 ## Layers

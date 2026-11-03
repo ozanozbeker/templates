@@ -36,6 +36,8 @@ NEXT = "3.15"
 CLASSIFIER_ANCHOR = "Programming Language :: Python :: 3"
 # The repo's own files at the root, which no repo receives.
 NOT_CONFIG = {"compose.py", "README.md", "LICENSE"}
+# A live `.github/` would run the workflows on this repo, so the layers hold them under `_github/`.
+GITHUB = "_github"
 
 
 def merge(
@@ -120,7 +122,7 @@ def layer_files(layer: Path) -> list[Path]:
     if layer == ROOT:
         # The root is also the repo: its own files and the layer directories are not config.
         top = [path for path in ROOT.iterdir() if path.is_file() and path.name not in NOT_CONFIG]
-        workflows = [path for path in (ROOT / ".github").rglob("*") if path.is_file()]
+        workflows = [path for path in (ROOT / GITHUB).rglob("*") if path.is_file()]
         files = [*top, *workflows]
     else:
         files = [path for path in layer.rglob("*") if path.is_file()]
@@ -133,7 +135,7 @@ def compose(dest: Path, layers: list[Path], *, force: bool) -> set[Path]:
     for layer in layers:
         for relative in layer_files(layer):
             source = layer / relative
-            target = dest / relative
+            target = dest / Path(".github", *relative.parts[1:]) if relative.parts[0] == GITHUB else dest / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             if relative.suffix == ".toml":
                 doc = (
@@ -206,7 +208,7 @@ def main() -> None:
     repo = args.repo or args.package.replace("_", "-")
     layers = [ROOT, *(ROOT / name for name in args.layers)]
     for layer in layers:
-        if not layer.is_dir() or (layer != ROOT and layer.name in {".github", ".git"}):
+        if not layer.is_dir() or layer.name in {GITHUB, ".git"}:
             message = f"no such layer: {layer}"
             raise SystemExit(message)
 
