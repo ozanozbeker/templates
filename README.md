@@ -2,9 +2,9 @@
 
 Config files for every repo, composed from a base and layers.
 
-`base/` holds what every repo gets: prek hooks, rumdl, tombi, a `.gitignore`, `SECURITY.md`, Dependabot and the workflows that run on a pull request.
-`layers/<name>/` adds what one kind of project needs, in the same tree shape.
-`compose.py` writes `base/` and the named layers into a repo, in that order.
+The root holds what every repo gets: prek hooks, rumdl, tombi, a `.gitignore`, `SECURITY.md`, Dependabot and the workflows that run on a pull request.
+Each directory is a layer that adds what one kind of project needs, in the same tree shape.
+`compose.py` writes the root and the named layers into a repo, in that order.
 
 ## Layers
 
@@ -43,6 +43,7 @@ Run `uv sync` and `prek install` in the repo afterwards.
 `RELEASED` and `NEXT` in `compose.py` name the CPython versions.
 Add a version at its final release, and move `NEXT` when the next version reaches its first beta.
 The workflows pin each action to a SHA; bump a pin here when Dependabot bumps it in a repo that uses it.
+The root's own `prek.toml`, `rumdl.toml` and `tombi.toml` are copies to hand out, not hooks that run here.
 
 This repo is a reference, not a project: no hooks, no CI, no config of its own.
 `compose.py` declares its dependencies inline, so `uv run` needs nothing else.

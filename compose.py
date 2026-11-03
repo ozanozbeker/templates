@@ -2,9 +2,9 @@
 # requires-python = ">=3.14"
 # dependencies = ["tomlkit>=0.13"]
 # ///
-"""Compose a repo's config files from `base/` and the layers named on the command line.
+"""Compose a repo's config files from this repo's root and the layers named on the command line.
 
-A layer mirrors the repo tree. A `.toml` file deep-merges onto what the destination already has, a `.gitignore`
+The root is the base every repo gets, and each top-level directory is a layer that mirrors the repo tree. A `.toml` file deep-merges onto what the destination already has, a `.gitignore`
 appends the lines it lacks, and every other file is copied whole, with the later layer winning. After the copy,
 the placeholders `<package>`, `<owner>`, `<repo>` and `<python>` are filled, and the Python versions from the
 floor to the newest release go into the classifiers and the CI matrix.
@@ -34,6 +34,8 @@ RELEASED = ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
 # next version reaches its first beta.
 NEXT = "3.15"
 CLASSIFIER_ANCHOR = "Programming Language :: Python :: 3"
+# The repo's own files at the root, which no repo receives.
+NOT_CONFIG = {"compose.py", "README.md", "LICENSE"}
 
 
 def merge(
@@ -113,11 +115,16 @@ def add_classifiers(text: str, floor: str) -> str:
     return tomlkit.dumps(doc)
 
 
-def layer_files(layer: Path) -> Iterable[Path]:
-    """Yield every file under `layer`, as a path relative to it."""
-    return sorted(
-        path.relative_to(layer) for path in layer.rglob("*") if path.is_file()
-    )
+def layer_files(layer: Path) -> list[Path]:
+    """Return every file under `layer`, as a path relative to it."""
+    if layer == ROOT:
+        # The root is also the repo: its own files and the layer directories are not config.
+        top = [path for path in ROOT.iterdir() if path.is_file() and path.name not in NOT_CONFIG]
+        workflows = [path for path in (ROOT / ".github").rglob("*") if path.is_file()]
+        files = [*top, *workflows]
+    else:
+        files = [path for path in layer.rglob("*") if path.is_file()]
+    return sorted(path.relative_to(layer) for path in files if path.name != ".DS_Store")
 
 
 def compose(dest: Path, layers: list[Path], *, force: bool) -> set[Path]:
@@ -168,7 +175,7 @@ def main() -> None:
     parser.add_argument(
         "layers",
         nargs="*",
-        help="layer names under layers/, applied after base in this order",
+        help="layer directories at the repo root, applied after the root in this order",
     )
     parser.add_argument(
         "--dest",
@@ -197,9 +204,9 @@ def main() -> None:
     args = parser.parse_args()
 
     repo = args.repo or args.package.replace("_", "-")
-    layers = [ROOT / "base", *(ROOT / "layers" / name for name in args.layers)]
+    layers = [ROOT, *(ROOT / name for name in args.layers)]
     for layer in layers:
-        if not layer.is_dir():
+        if not layer.is_dir() or (layer != ROOT and layer.name in {".github", ".git"}):
             message = f"no such layer: {layer}"
             raise SystemExit(message)
 
